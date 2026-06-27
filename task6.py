@@ -8,14 +8,14 @@ from sklearn.feature_extraction.text import (
 )
 from sklearn.metrics.pairwise import cosine_similarity
 
-stop_words = ENGLISH_STOP_WORDS
 df = pd.read_csv("YoutubeCommentsDataSet.csv")
 
+# Clean column names
 df.columns = df.columns.str.strip()
 
-stop_words = set(stopwords.words("english"))
-
 df["Comment"] = df["Comment"].fillna("")
+
+stop_words = ENGLISH_STOP_WORDS
 
 def clean_text(text):
 
@@ -37,7 +37,7 @@ df["clean_text"] = df["Comment"].apply(clean_text)
 
 tfidf = TfidfVectorizer(
     max_features=5000,
-    ngram_range=(1,2)
+    ngram_range=(1, 2)
 )
 
 tfidf_matrix = tfidf.fit_transform(df["clean_text"])
@@ -46,9 +46,12 @@ similarity_matrix = cosine_similarity(tfidf_matrix)
 
 def recommend(comment_text, top_n=5):
 
-    idx = df[
-        df["Comment"] == comment_text
-    ].index[0]
+    matches = df[df["Comment"] == comment_text]
+
+    if len(matches) == 0:
+        return ["Comment not found"]
+
+    idx = matches.index[0]
 
     similarity_scores = list(
         enumerate(similarity_matrix[idx])
@@ -56,23 +59,31 @@ def recommend(comment_text, top_n=5):
 
     similarity_scores = sorted(
         similarity_scores,
-        key=lambda x:x[1],
+        key=lambda x: x[1],
         reverse=True
     )
 
-    similarity_scores = similarity_scores[1:top_n+1]
+    similarity_scores = similarity_scores[1:top_n + 1]
 
-    results = []
+    recommendations = []
 
     for i, score in similarity_scores:
-
-        results.append(
+        recommendations.append(
             df.iloc[i]["Comment"]
         )
 
-    return results
+    return recommendations
 
-st.title("YouTube Comment Recommendation System")
+st.set_page_config(
+    page_title="YouTube Comment Recommendation System",
+    layout="wide"
+)
+
+st.title(" YouTube Comment Recommendation System")
+
+st.write(
+    "Select a YouTube comment and get similar comments based on TF-IDF and Cosine Similarity."
+)
 
 selected_comment = st.selectbox(
     "Select a Comment",
@@ -82,15 +93,11 @@ selected_comment = st.selectbox(
 if st.button("Get Recommendations"):
 
     recommendations = recommend(
-        selected_comment
+        selected_comment,
+        top_n=5
     )
 
-    st.subheader(
-        "Recommended Similar Comments"
-    )
+    st.subheader("Recommended Similar Comments")
 
-    for i, rec in enumerate(
-        recommendations,
-        start=1
-    ):
+    for i, rec in enumerate(recommendations, start=1):
         st.write(f"{i}. {rec}")
