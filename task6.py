@@ -2,10 +2,13 @@ import streamlit as st
 import pandas as pd
 import re
 
-from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import (
+    TfidfVectorizer,
+    ENGLISH_STOP_WORDS
+)
 from sklearn.metrics.pairwise import cosine_similarity
 
+stop_words = ENGLISH_STOP_WORDS
 df = pd.read_csv("YoutubeCommentsDataSet.csv")
 
 df.columns = df.columns.str.strip()
